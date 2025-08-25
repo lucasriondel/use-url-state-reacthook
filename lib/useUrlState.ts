@@ -5,6 +5,82 @@ import { parseFromUrl } from "./utils/parseFromUrl";
 import { resolveDefaults } from "./utils/resolveDefaults";
 import { writeToUrl } from "./utils/writeToUrl";
 
+/**
+ * A powerful React hook for managing state synchronized with URL search parameters.
+ *
+ * This hook provides a complete solution for persisting React state in the URL, enabling
+ * shareable URLs and browser history integration. It automatically serializes/deserializes
+ * state to/from URL search parameters and provides a rich API for state management.
+ *
+ * Key features:
+ * - Automatic URL synchronization with debouncing support
+ * - Type-safe state management with TypeScript generics
+ * - Custom serialization through codecs
+ * - Browser history integration (back/forward button support)
+ * - Namespace support for multiple hook instances
+ * - Sanitization and validation hooks
+ *
+ * @template T - The shape of the state object. Must extend Record<string, unknown>
+ *
+ * @param defaultsOption - Default values for the state, can be a static object or a function that returns defaults.
+ *                        Used when URL parameters are missing or invalid.
+ * @param options - Configuration options for URL state behavior
+ * @param options.codecs - Custom serialization/deserialization functions for specific properties.
+ *                        By default, values are serialized as strings using JSON.stringify for complex types.
+ * @param options.sanitize - Function to validate and transform state data before it's set.
+ *                          Useful for data validation, type coercion, or filtering.
+ * @param options.onChange - Callback fired whenever the state changes, receives the new state and metadata about the change source.
+ * @param options.history - History mode: 'replace' (default) replaces current entry, 'push' creates new history entries.
+ * @param options.debounceMs - Debounce delay in milliseconds for URL updates. Useful for preventing excessive URL changes during rapid state updates.
+ * @param options.syncOnPopState - Whether to sync state when browser back/forward buttons are used (default: true).
+ * @param options.namespace - Optional namespace prefix for URL parameters to avoid conflicts with other hooks or libraries.
+ *
+ * @returns A tuple containing:
+ *   - The current state object with all properties
+ *   - An API object with methods for state manipulation:
+ *     - `setState`: Standard React setState function for replacing entire state
+ *     - `get`: Get the current value of a specific property
+ *     - `set`: Set a specific property value (undefined removes it from URL)
+ *     - `patch`: Merge partial state changes into current state
+ *     - `remove`: Remove specific properties from state and URL
+ *     - `clear`: Reset state to empty object and clear all URL parameters
+ *
+ * @example
+ * ```tsx
+ * // Basic usage with search filters
+ * const [filters, filtersApi] = useUrlState({ search: '', category: 'all' });
+ *
+ * // Update individual properties
+ * filtersApi.set('search', 'react hooks');
+ * filtersApi.set('category', 'frontend');
+ *
+ * // Patch multiple properties at once
+ * filtersApi.patch({ search: 'vue', category: 'frontend' });
+ *
+ * // With custom serialization for complex data
+ * const [state, api] = useUrlState({ items: [], settings: {} }, {
+ *   codecs: {
+ *     items: {
+ *       parse: (str) => JSON.parse(str),
+ *       format: (items) => JSON.stringify(items)
+ *     }
+ *   },
+ *   debounceMs: 300, // Debounce URL updates
+ *   namespace: 'app' // Prefix parameters with 'app_'
+ * });
+ *
+ * // With validation and change tracking
+ * const [userPrefs, prefsApi] = useUrlState({ theme: 'light', lang: 'en' }, {
+ *   sanitize: (draft) => ({
+ *     theme: ['light', 'dark'].includes(draft.theme) ? draft.theme : 'light',
+ *     lang: ['en', 'fr', 'es'].includes(draft.lang) ? draft.lang : 'en'
+ *   }),
+ *   onChange: (newState, { source }) => {
+ *     console.log(`State changed from ${source}:`, newState);
+ *   }
+ * });
+ * ```
+ */
 export function useUrlState<T extends Record<string, unknown>>(
   defaultsOption?: DeepPartial<T> | (() => DeepPartial<T>),
   options: UrlStateOptions<T> = {}

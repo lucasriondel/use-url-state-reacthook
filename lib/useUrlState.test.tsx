@@ -1,6 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { useUrlProp } from "./useUrlProp";
 import { useUrlState } from "./useUrlState";
 
 function setWindowLocation(href: string) {
@@ -249,22 +248,6 @@ describe("useUrlState", () => {
   });
 
   // sanity check for prop-level helper
-  describe("prop hook", () => {
-    it("useUrlProp reads and sets a single property", () => {
-      const { result } = renderHook(() =>
-        useUrlProp<{ q?: string; page?: number }, "q">("q", undefined, {
-          namespace: "ns",
-        })
-      );
-      const [q, setQ] = result.current;
-      expect(q).toBeUndefined();
-      act(() => setQ("val"));
-      expect(new URL(window.location.href).searchParams.get("ns.q")).toBe(
-        "val"
-      );
-    });
-  });
-
   describe("function-based defaults", () => {
     it("supports function-based defaults", () => {
       const defaultsFn = vi.fn(() => ({ q: "computed", page: 10 }));

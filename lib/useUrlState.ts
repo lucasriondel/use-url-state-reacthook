@@ -41,9 +41,7 @@ function resolveDefaults<T>(
   defaults?: DeepPartial<T> | (() => DeepPartial<T>)
 ): DeepPartial<T> {
   if (!defaults) return {};
-  return typeof defaults === "function"
-    ? defaults()
-    : defaults;
+  return typeof defaults === "function" ? defaults() : defaults;
 }
 
 function mergeWithDefaults<T extends Record<string, unknown>>(
@@ -84,7 +82,7 @@ function parseFromUrl<T extends Record<string, unknown>>(
       out[key] = defaultUrlDeserialize<unknown>(v);
     }
   }
-  return out;
+  return out as Partial<T>;
 }
 
 function writeToUrl<T extends Record<string, unknown>>(
@@ -140,14 +138,9 @@ export function useUrlState<T extends Record<string, unknown>>(
   );
 
   const readInitial = React.useCallback((): T => {
-    const persistedPartial = parseFromUrl<T>(
-      namespace as string,
-      codecs
-    );
-    const sanitized = sanitize
-      ? sanitize(persistedPartial)
-      : persistedPartial;
-    return mergeWithDefaults<T>(sanitized, defaults);
+    const persistedPartial = parseFromUrl<T>(namespace as string, codecs);
+    const sanitized = sanitize ? sanitize(persistedPartial) : persistedPartial;
+    return mergeWithDefaults<T>(sanitized as Partial<T>, defaults);
   }, [namespace, codecs, defaults, sanitize]);
 
   const [state, setState] = React.useState<T>(readInitial);
@@ -160,7 +153,12 @@ export function useUrlState<T extends Record<string, unknown>>(
   const flushWrite = React.useCallback(
     (partial: Partial<T>, source: "set" | "patch") => {
       const payload = sanitize ? sanitize(partial) : partial;
-      writeToUrl<T>(payload, namespace as string, codecs, history);
+      writeToUrl<T>(
+        payload as Partial<T>,
+        namespace as string,
+        codecs,
+        history
+      );
       const effectiveNext = (() => {
         const base = { ...stateRef.current } as Record<string, unknown>;
         (Object.keys(payload) as Array<keyof T>).forEach((k) => {
@@ -201,10 +199,7 @@ export function useUrlState<T extends Record<string, unknown>>(
   React.useEffect(() => {
     if (!syncOnPopState) return;
     const handler = () => {
-      const partial = parseFromUrl<T>(
-        namespace as string,
-        codecs
-      );
+      const partial = parseFromUrl<T>(namespace as string, codecs);
       const sanitized = sanitize ? sanitize(partial) : partial;
       const current = { ...stateRef.current } as Record<string, unknown>;
       (Object.keys(sanitized) as Array<keyof T>).forEach((k) => {

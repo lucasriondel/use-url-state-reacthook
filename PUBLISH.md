@@ -32,8 +32,11 @@ You need to create an NPM access token and add it to your GitHub repository secr
 
 Make sure your repository has:
 
-- Write permissions for GitHub Actions (Settings → Actions → General → Workflow permissions)
-- Allow GitHub Actions to create and approve pull requests (if needed)
+- **Write permissions for GitHub Actions**:
+  - Go to Settings → Actions → General → Workflow permissions
+  - Select "Read and write permissions"
+  - Check "Allow GitHub Actions to create and approve pull requests"
+- **Contents permission**: The workflow needs to push tags and commits back to the repository
 
 ## 📦 Version Control
 

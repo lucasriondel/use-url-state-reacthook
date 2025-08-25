@@ -1,6 +1,6 @@
 {
   "name": "use-url-state-reacthook",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "type": "module",
   "description": "A React hook for managing URL state",
   "main": "dist/index.js",
@@ -36,6 +36,10 @@
     "typescript"
   ],
   "author": "lucasriondel",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lucasriondel/use-url-state-reacthook.git"
+  },
   "license": "MIT",
   "peerDependencies": {
     "react": ">=16.8.0",

@@ -22,6 +22,11 @@ on:
           - major
           - prerelease
 
+permissions:
+  contents: write
+  packages: write
+  pull-requests: write
+
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -32,6 +37,7 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: true
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -64,6 +70,7 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
+          git config --local url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
 
       - name: Determine version bump type
         id: version_type
@@ -132,7 +139,8 @@ jobs:
       - name: Create and push tag
         run: |
           git tag "v${{ env.NEW_VERSION }}"
-          git push origin main --tags
+          git push origin HEAD:main
+          git push origin "v${{ env.NEW_VERSION }}"
 
       - name: Publish to NPM
         run: pnpm publish --access public --no-git-checks

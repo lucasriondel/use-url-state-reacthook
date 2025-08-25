@@ -1,122 +1,9 @@
 import * as React from "react";
-import {
-  defaultUrlDeserialize,
-  defaultUrlSerialize,
-  getCurrentUrl,
-  getSearchParams,
-  setUrl,
-} from "./urlStateUtils";
-
-export type DeepPartial<T> = {
-  [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]> : T[K];
-};
-
-export type Codec<V> = {
-  parse: (raw: string) => V;
-  format: (value: V) => string;
-};
-
-type CodecsMap<T> = Partial<{ [K in keyof T]: Codec<NonNullable<T[K]>> }>;
-
-export type UrlStateOptions<T extends Record<string, unknown>> = {
-  codecs?: CodecsMap<T>;
-  sanitize?: (draft: DeepPartial<T>) => DeepPartial<T>;
-  onChange?: (next: T, meta: { source: "set" | "patch" | "external" }) => void;
-  history?: "replace" | "push";
-  debounceMs?: number;
-  syncOnPopState?: boolean;
-  namespace?: string;
-};
-
-export type UrlApiActions<T extends Record<string, unknown>> = {
-  setState: React.Dispatch<React.SetStateAction<T>>;
-  get: <K extends keyof T>(key: K) => T[K] | undefined;
-  set: <K extends keyof T>(key: K, value: T[K] | undefined) => void;
-  patch: (partial: DeepPartial<T>) => void;
-  remove: <K extends keyof T>(...keys: K[]) => void;
-  clear: () => void;
-};
-
-function resolveDefaults<T>(
-  defaults?: DeepPartial<T> | (() => DeepPartial<T>)
-): DeepPartial<T> {
-  if (!defaults) return {};
-  return typeof defaults === "function" ? defaults() : defaults;
-}
-
-function mergeWithDefaults<T extends Record<string, unknown>>(
-  persisted: Partial<T>,
-  defaults: DeepPartial<T>
-): T {
-  return Object.assign({}, defaults, persisted) as T;
-}
-
-function buildParamName(namespace: string | undefined, key: string): string {
-  return namespace ? `${namespace}.${key}` : key;
-}
-
-function parseFromUrl<T extends Record<string, unknown>>(
-  namespace: string | undefined,
-  codecs: CodecsMap<T>
-): Partial<T> {
-  const url = getCurrentUrl();
-  if (!url) return {};
-  const params = getSearchParams(url);
-  const out: Record<string, unknown> = {};
-  const entries = Array.from(params.entries());
-  for (const [k, v] of entries) {
-    const key = namespace
-      ? k.startsWith(`${namespace}.`)
-        ? k.slice(namespace.length + 1)
-        : undefined
-      : k;
-    if (!key) continue;
-    const codec = codecs[key as keyof T];
-    if (codec) {
-      try {
-        out[key] = codec.parse(v);
-      } catch {
-        // ignore parse error
-      }
-    } else {
-      out[key] = defaultUrlDeserialize<unknown>(v);
-    }
-  }
-  return out as Partial<T>;
-}
-
-function writeToUrl<T extends Record<string, unknown>>(
-  next: Partial<T>,
-  namespace: string | undefined,
-  codecs: CodecsMap<T>,
-  history: "replace" | "push"
-): void {
-  const url = getCurrentUrl();
-  if (!url) return;
-  const params = getSearchParams(url);
-
-  if (namespace) {
-    for (const key of Array.from(params.keys())) {
-      if (key.startsWith(`${namespace}.`)) params.delete(key);
-    }
-  }
-
-  Object.entries(next).forEach(([k, value]) => {
-    const paramKey = buildParamName(namespace, k);
-    if (value === undefined) {
-      params.delete(paramKey);
-      return;
-    }
-    const codec = codecs[k as keyof T];
-    const encoded = codec
-      ? codec.format(value)
-      : defaultUrlSerialize<unknown>(value);
-    params.set(paramKey, encoded);
-  });
-
-  url.search = params.toString();
-  setUrl(url, history);
-}
+import { DeepPartial, UrlApiActions, UrlStateOptions } from "./types";
+import { mergeWithDefaults } from "./utils/mergeWithDefaults";
+import { parseFromUrl } from "./utils/parseFromUrl";
+import { resolveDefaults } from "./utils/resolveDefaults";
+import { writeToUrl } from "./utils/writeToUrl";
 
 export function useUrlState<T extends Record<string, unknown>>(
   defaultsOption?: DeepPartial<T> | (() => DeepPartial<T>),
@@ -275,21 +162,4 @@ export function useUrlState<T extends Record<string, unknown>>(
   );
 
   return [state, api];
-}
-
-export function useUrlProp<
-  T extends Record<string, unknown>,
-  K extends keyof T
->(
-  key: K,
-  defaultsOption?: DeepPartial<T> | (() => DeepPartial<T>),
-  options: UrlStateOptions<T> = {}
-): [T[K] | undefined, (value: T[K] | undefined) => void] {
-  const [state, api] = useUrlState<T>(defaultsOption, options);
-  const value = state[key];
-  const setValue = React.useCallback(
-    (v: T[K] | undefined) => api.set(key, v),
-    [api, key]
-  );
-  return [value, setValue];
 }

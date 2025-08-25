@@ -124,12 +124,12 @@ export function useUrlState<T extends Record<string, unknown>>(
       );
       const effectiveNext = (() => {
         const base = { ...stateRef.current } as Record<string, unknown>;
-        (Object.keys(payload) as Array<keyof T>).forEach((k) => {
-          const v = payload[k as keyof T] as unknown;
+        Object.keys(payload).forEach((k) => {
+          const v = payload[k as keyof T];
           if (v === undefined) {
-            delete base[k as string];
+            delete base[k];
           } else {
-            base[k as string] = v;
+            base[k] = v;
           }
         });
         return base as T;

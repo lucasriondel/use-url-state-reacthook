@@ -31,7 +31,7 @@ export function writeToUrl<T extends Record<string, unknown>>(
     }
     const codec = codecs[k as keyof T];
     const encoded = codec
-      ? codec.format(value)
+      ? codec.format(value as NonNullable<T[keyof T]>)
       : defaultUrlSerialize<unknown>(value);
     params.set(paramKey, encoded);
   });

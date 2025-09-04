@@ -1,5 +1,13 @@
 export function defaultUrlDeserialize<T>(raw: string): T {
-  const decoded = decodeURIComponent(raw);
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(raw);
+  } catch (error) {
+    // Handle URI malformed errors by returning the raw string
+    console.warn(`Failed to decode URI component "${raw}":`, error);
+    decoded = raw;
+  }
+  
   try {
     return JSON.parse(decoded) as T;
   } catch {

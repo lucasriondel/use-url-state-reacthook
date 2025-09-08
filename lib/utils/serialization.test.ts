@@ -245,10 +245,8 @@ describe("URL Serialization", () => {
         const params = new URLSearchParams(url.search);
         const searchValue = params.get("test-table.search");
 
-        console.log("Parsed search value:", searchValue);
         expect(searchValue).toBe("user%with%percent"); // Should be the original
-      } catch (error) {
-        console.log("Error parsing URL:", error);
+      } catch {
         // This might throw if there's a URI malformed error
       }
     });
@@ -270,7 +268,7 @@ describe("URL Serialization", () => {
       try {
         const result = defaultUrlDeserialize(encodedValue);
         expect(result).toBe("user%with%percent");
-      } catch (error) {
+      } catch {
         // This might fail if there's a malformed URI
       }
     });
@@ -286,7 +284,7 @@ describe("URL Serialization", () => {
 
       malformedSequences.forEach((sequence) => {
         try {
-          const result = defaultUrlDeserialize(sequence);
+          defaultUrlDeserialize(sequence);
         } catch (error) {
           expect(error).toBeInstanceOf(URIError);
         }
@@ -323,7 +321,7 @@ describe("URL Serialization", () => {
       malformedSequences.forEach((sequence) => {
         // Should not throw anymore
         expect(() => {
-          const result = defaultUrlDeserialize(sequence);
+          defaultUrlDeserialize(sequence);
         }).not.toThrow();
 
         // Should return the original malformed string
@@ -367,13 +365,12 @@ describe("URL Serialization", () => {
 
       problematicCases.forEach((testCase) => {
         try {
-          const direct = decodeURIComponent(testCase);
-        } catch (error) {
+          decodeURIComponent(testCase);
+        } catch {
           // Expected to fail for malformed sequences
         }
 
-        // Our fix should handle this gracefully
-        const viaDefaultDeserialize = defaultUrlDeserialize(testCase);
+        defaultUrlDeserialize(testCase);
       });
     });
   });

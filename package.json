@@ -1,6 +1,6 @@
 {
   "name": "use-url-state-reacthook",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "module",
   "description": "A React hook for managing URL state",
   "main": "dist/index.js",

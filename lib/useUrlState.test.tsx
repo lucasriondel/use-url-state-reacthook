@@ -407,6 +407,98 @@ describe("useUrlState", () => {
     });
   });
 
+  describe("URL parameter merging", () => {
+    describe("with namespace", () => {
+      it("should behave correctly when using patch", () => {
+        setWindowLocation("https://example.com/?test.page=0");
+
+        const { result } = renderHook(() =>
+          useUrlState<{ page?: number; new?: string }>(
+            {},
+            {
+              namespace: "test",
+            }
+          )
+        );
+
+        expect(result.current[0]).toEqual({ page: 0 });
+        act(() => result.current[1].patch({ new: "test" }));
+
+        expect(result.current[0]).toEqual({ page: 0, new: "test" });
+        expect(new URL(window.location.href).searchParams.get("test.new")).toBe(
+          "test"
+        );
+        expect(
+          new URL(window.location.href).searchParams.get("test.page")
+        ).toBe("0");
+      });
+
+      it("should behave correctly when using set", () => {
+        setWindowLocation("https://example.com/?test.page=0");
+
+        const { result } = renderHook(() =>
+          useUrlState<{ page?: number; new?: string }>(
+            {},
+            {
+              namespace: "test",
+            }
+          )
+        );
+
+        expect(result.current[0]).toEqual({ page: 0 });
+        act(() => result.current[1].set("new", "test"));
+
+        expect(result.current[0]).toEqual({ page: 0, new: "test" });
+        expect(new URL(window.location.href).searchParams.get("test.new")).toBe(
+          "test"
+        );
+        expect(
+          new URL(window.location.href).searchParams.get("test.page")
+        ).toBe("0");
+      });
+    });
+
+    describe("without namespace", () => {
+      it("should behave correctly when using patch", () => {
+        setWindowLocation("https://example.com/?page=0");
+
+        const { result } = renderHook(() =>
+          useUrlState<{ page?: number; new?: string }>({}, {})
+        );
+
+        expect(result.current[0]).toEqual({ page: 0 });
+        act(() => result.current[1].patch({ new: "test" }));
+
+        expect(result.current[0]).toEqual({ page: 0, new: "test" });
+        expect(new URL(window.location.href).searchParams.get("new")).toBe(
+          "test"
+        );
+        expect(new URL(window.location.href).searchParams.get("page")).toBe(
+          "0"
+        );
+      });
+
+      it("should behave correctly when using set", () => {
+        setWindowLocation("https://example.com/?page=0");
+
+        const { result } = renderHook(() =>
+          useUrlState<{ page?: number; new?: string }>({}, {})
+        );
+
+        expect(result.current[0]).toEqual({ page: 0 });
+        act(() => result.current[1].set("new", "test"));
+
+        expect(result.current[0]).toEqual({ page: 0, new: "test" });
+        expect(new URL(window.location.href).searchParams.get("new")).toBe(
+          "test"
+        );
+        expect(new URL(window.location.href).searchParams.get("page")).toBe(
+          "0"
+        );
+      });
+    });
+  });
+
   describe("edge cases", () => {
     it("handles undefined namespace gracefully", () => {
       const { result } = renderHook(() =>
